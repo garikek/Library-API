@@ -1,33 +1,45 @@
 package com.example.BookService.service;
 
+import com.example.BookService.dto.BookDTO;
+import com.example.BookService.dto.BookListDTO;
+import com.example.BookService.mapper.BookMapper;
+import lombok.RequiredArgsConstructor;
 import com.example.BookService.model.Book;
 import com.example.BookService.repository.BookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+
+@RequiredArgsConstructor
 @Service
 public class BookService {
     @Autowired
     private BookRepository bookRepository;
+    private BookMapper bookMapper;
 
 
     //Получение определённой книги по её Id
-    public Book getBook(long Id) {
-        return bookRepository.findById(Id).orElseThrow(() -> new RuntimeException("Not Found"));
+    public BookDTO getBookById(Long id) {
+        Optional<Book> temp_book = bookRepository.findById(id);
+        return bookMapper.toBookDTO(temp_book);
     }
 
 
     //Получение списка всех книг
-    public List<Book> getBooks() {
-        return bookRepository.findAll();
+    public BookListDTO getBooks() {
+        return new BookListDTO(bookRepository.findAll().stream()
+                .map((book) -> bookMapper.toBookDTO(Optional.ofNullable(book)))
+                .collect(Collectors.toList()));
     }
 
 
     //Получение книги по её ISBN
-    public Book getBookByIsbn(String isbn) {
-        return bookRepository.getBookByIsbn(isbn);
+    public BookDTO getBookByIsbn(String isbn) {
+        Optional<Book> temp_book = bookRepository.findByIsbn(isbn);
+        return bookMapper.toBookDTO(temp_book);
     }
 
 
@@ -53,8 +65,10 @@ public class BookService {
 
 
     //Добавление новой книги
-    public Book addBook(Book book){
-        return bookRepository.save(book);
+    public BookDTO addBook(BookDTO bookDTO) {
+        Book book = bookMapper.toBookModel(bookDTO);
+        Book savedBook = bookRepository.save(book);
+        return bookMapper.toBookDTO(Optional.of(savedBook));
     }
 
 
